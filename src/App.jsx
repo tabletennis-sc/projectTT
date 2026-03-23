@@ -65,18 +65,43 @@ function PaymentModal({ product, onClose, user }) {
   };
 
   const handleConfirm = async () => {
-    if (!slipFile) return;
-    setSubmitting(true);
-    try {
-      // แปลงรูปเป็น base64
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const b64 = ev.target.result.split(",")[1];
-          resolve(b64);
-        };
-        reader.readAsDataURL(slipFile);
-      });
+  if (!slipFile) return;
+  setSubmitting(true);
+  try {
+    // ─── Step 1: อัปโหลดรูปไป Imgur ───
+    const formData = new FormData();
+    formData.append("image", slipFile);
+
+    const imgurRes = await fetch("https://api.imgur.com/3/image", {
+      method: "POST",
+      headers: { Authorization: "Client-ID 546c25a59c58ad7" },
+      body: formData,
+    });
+    const imgurData = await imgurRes.json();
+    const imageUrl = imgurData.data?.link || "";
+
+    // ─── Step 2: ส่ง URL ไปบันทึกใน Sheets ───
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action:       "addOrder",
+        productId:    String(product.id),
+        productTitle: product.title,
+        price:        product.price,
+        buyerName:    user?.name  || "Guest",
+        buyerEmail:   user?.email || "",
+        date:         new Date().toISOString(),
+        slipUrl:      imageUrl,
+      }),
+    });
+
+    setSlipUrl(imageUrl);
+  } catch (err) {
+    console.error("Upload error:", err);
+  }
+  setSubmitting(false);
+  setStep("done");
+};
 
       const ext = slipFile.name.split(".").pop().toLowerCase() || "jpg";
 
