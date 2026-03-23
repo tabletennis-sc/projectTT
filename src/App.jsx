@@ -74,7 +74,7 @@ function PaymentModal({ product, onClose, user }) {
 
     const imgurRes = await fetch("https://api.imgur.com/3/image", {
       method: "POST",
-      headers: { Authorization: "Client-ID 546c25a59c58ad7" },
+      headers: { Authorization: "Client-ID 6bfb863f59d8b76" },
       body: formData,
     });
     const imgurData = await imgurRes.json();
